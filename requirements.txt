@@ -10,4 +10,8 @@ reportlab==4.0.4
 matplotlib==3.7.2
 seaborn==0.12.2
 Pillow==10.0.0
+selenium==4.25.0
+webdriver-manager==4.0.1
+time==0.1.0
+unicodedata==0.1.0
 
