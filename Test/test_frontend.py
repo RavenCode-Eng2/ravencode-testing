@@ -238,6 +238,111 @@ def test_settings_update(driver, logger, user_email, user_password, new_name, ne
         )
         return False
 
+def test_module1_full_workflow(driver, logger, user_email, user_password):
+    logger.add_log("Testing Module1 full workflow", "INFO")
+    try:
+        # 1. Login
+        driver.get(BASE_URL + "/login")
+        logger.add_log("Navigated to login page", "INFO")
+        email_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "email"))
+        )
+        password_input = driver.find_element(By.ID, "password")
+        email_input.clear()
+        password_input.clear()
+        email_input.send_keys(user_email)
+        password_input.send_keys(user_password)
+        login_button = driver.find_element(By.XPATH, "//button[contains(., 'Iniciar sesión')]")
+        login_button.click()
+        logger.add_log("Submitted login form", "INFO")
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//h2[contains(., 'Bienvenido')]")
+        ))
+        logger.add_log("Login successful", "PASS")
+
+        # 2. Go to "Cursos"
+        driver.get(BASE_URL + "/courses")
+        logger.add_log("Navigated to Cursos", "INFO")
+        # Wait for the Cursos heading or main container
+        try:
+            WebDriverWait(driver, 30).until(
+                EC.visibility_of_element_located((By.XPATH, "//h1[contains(., 'Cursos')]"))
+            )
+            logger.add_log("Cursos heading found", "INFO")
+        except Exception as e:
+            logger.add_log(f"Cursos heading not found: {str(e)}", "FAIL")
+            logger.add_log(f"Page source snippet: {driver.page_source[:1000]}", "INFO")
+            return False
+
+        # Now wait for the module card
+        try:
+            modulo1_elem = WebDriverWait(driver, 30).until(
+                EC.visibility_of_element_located((By.XPATH, "//*[normalize-space(text())='Módulo 1: Fundamentos de Python']"))
+            )
+            logger.add_log("Found Módulo 1 card", "PASS")
+        except Exception as e:
+            logger.add_log(f"Could not find 'Módulo 1: Fundamentos de Python' card: {str(e)}", "FAIL")
+            logger.add_log(f"Page source snippet: {driver.page_source[:1000]}", "INFO")
+            return False
+
+        # 3. Click "Ver contenidos" for Módulo 1
+        ver_contenidos_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Ver contenidos')]"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView();", ver_contenidos_btn)
+        ver_contenidos_btn.click()
+        logger.add_log("Clicked 'Ver contenidos'", "INFO")
+
+        # 4. Click "Ver lección" for Introducción
+        ver_leccion_intro_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Ver lección')][ancestor::*[contains(., 'Introducción')]]"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView();", ver_leccion_intro_btn)
+        ver_leccion_intro_btn.click()
+        logger.add_log("Clicked 'Ver lección' for Introducción", "INFO")
+
+        # 5. Scroll down and click "Inicia tu aprendizaje"
+        inicia_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Inicia tu aprendizaje')]"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView();", inicia_btn)
+        inicia_btn.click()
+        logger.add_log("Clicked 'Inicia tu aprendizaje'", "INFO")
+
+        # 6. Go through lessons 1 to 5, clicking "Siguiente" each time
+        for i in range(1, 6):
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), 'Lección {i}')]"))
+            )
+            logger.add_log(f"On Lección {i}", "INFO")
+            siguiente_btn = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Siguiente')]"))
+            )
+            driver.execute_script("arguments[0].scrollIntoView();", siguiente_btn)
+            siguiente_btn.click()
+            logger.add_log(f"Clicked 'Siguiente' on Lección {i}", "INFO")
+
+        # 7. On last lesson, click "Reto"
+        reto_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Reto')]"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView();", reto_btn)
+        reto_btn.click()
+        logger.add_log("Clicked 'Reto' on last lesson", "INFO")
+
+        # 8. Check for "Evaluación Juez Módulo 1"
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Evaluación Juez Módulo 1')]"))
+        )
+        logger.add_log("Module1 full workflow: PASS (reached Evaluación Juez Módulo 1)", "PASS")
+        return True
+    except Exception as e:
+        logger.add_log(
+            f"Module1 full workflow: FAIL ({str(e)})",
+            "FAIL"
+        )
+        return False
+
 def main():
     logger = TestLogger("Frontend Login & Registration Integration Test")
     logger.start_test()
@@ -255,7 +360,8 @@ def main():
         forgot_pass = test_forgot_password_request(driver, logger, "ciamurciamur@gmail.com")
         dashboard_pass = test_dashboard(driver, logger, "camurcioa@unal.edu.co", "RavenCode123", expected_name="Carlos")  # Change expected_name as needed
         settings_pass = test_settings_update(driver, logger, "tatianitalamasbonita@example.com", "Tatis123", "Tatianita Rodriguez", "Colegio Mis Primeras Travesuras", "2")
-        overall = valid and invalid and new_email is not None and duplicate and forgot_pass and dashboard_pass and settings_pass
+        module1_workflow_pass = test_module1_full_workflow(driver, logger, "camurcioa@unal.edu.co", "RavenCode123")
+        overall = valid and invalid and new_email is not None and duplicate and forgot_pass and dashboard_pass and settings_pass and module1_workflow_pass
     except Exception as e:
         logger.add_log(f"Test execution error: {str(e)}", "FAIL")
         overall = False
