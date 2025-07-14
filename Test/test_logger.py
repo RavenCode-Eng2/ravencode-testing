@@ -68,7 +68,14 @@ class TestLogger:
             if self.start_time:
                 duration = self.end_time - self.start_time
                 pdf.cell(210, 8, f"Duration: {duration.total_seconds():.2f} seconds", ln=True, align='C')
-        pdf.cell(210, 8, f"Status: {self.status}", ln=True, align='C')
+
+        # Calculate pass/fail percentage
+        pass_count = sum(1 for _, _, status in self.logs if status == "PASS")
+        fail_count = sum(1 for _, _, status in self.logs if status == "FAIL")
+        total = pass_count + fail_count
+        percent = int(round((pass_count / total) * 100)) if total > 0 else 0
+        status_line = f"Status: {self.status} ({percent}%)"
+        pdf.cell(210, 8, status_line, ln=True, align='C')
         pdf.ln(8)
 
         # Table header (restore previous good alignment)

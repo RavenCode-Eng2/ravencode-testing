@@ -344,7 +344,7 @@ def test_module1_full_workflow(driver, logger, user_email, user_password):
         return False
 
 def main():
-    logger = TestLogger("Frontend Login & Registration Integration Test")
+    logger = TestLogger("Frontend Integration Test")
     logger.start_test()
     options = Options()
     service = Service(ChromeDriverManager().install())
